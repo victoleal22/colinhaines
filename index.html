@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Colinha — Narrativa Audiovisual</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0a;
+  --bg2: #141414;
+  --bg3: #1c1c1c;
+  --border: rgba(255,255,255,0.08);
+  --text: #f0ede8;
+  --text2: #888580;
+  --text3: #444;
+  --gold: #c9a84c;
+  --gold2: #e8c97a;
+  --font-d: 'DM Serif Display', Georgia, serif;
+  --font-s: 'DM Sans', system-ui, sans-serif;
+}
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-s);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 99;
+  background: rgba(10,10,10,0.95);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+}
+.topbar-title { font-family: var(--font-d); font-size: 16px; color: var(--gold2); }
+.topbar-sub { font-size: 11px; color: var(--text3); }
+
+/* ── CATEGORY PILLS ── */
+.cats {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding: 12px 16px 4px;
+  scrollbar-width: none;
+}
+.cats::-webkit-scrollbar { display: none; }
+.cat-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 14px; border-radius: 100px; border: 1px solid var(--border);
+  background: transparent; cursor: pointer; white-space: nowrap;
+  font-family: var(--font-s); font-size: 12px; font-weight: 500;
+  color: var(--text2); transition: all 0.18s;
+  flex-shrink: 0;
+}
+.cat-pill.active { color: var(--bg); font-weight: 600; }
+.cat-pill[data-cat="all"].active { background: var(--text); border-color: var(--text); }
+.cat-pill[data-cat="narrador"].active { background: #888; border-color: #888; }
+.cat-pill[data-cat="conflito"].active { background: #c9423d; border-color: #c9423d; }
+.cat-pill[data-cat="espaco"].active { background: #4da87a; border-color: #4da87a; }
+.cat-pill[data-cat="tempo"].active { background: #9b6dd6; border-color: #9b6dd6; }
+.cat-pill[data-cat="personagem"].active { background: #4d8fcc; border-color: #4d8fcc; }
+.cat-pill[data-cat="autor"].active { background: var(--gold); border-color: var(--gold); }
+
+/* ── CARDS CONTAINER ── */
+.cards-wrap {
+  padding: 12px 16px 80px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+/* ── CARD ── */
+@property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes spin { to { --angle: 360deg; } }
+
+.card {
+  position: relative;
+  background: var(--bg2);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.card::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: 14px;
+  padding: 1px;
+  background: conic-gradient(from var(--angle) at 50% 50%,
+    rgba(255,255,255,0.03) 0deg,
+    rgba(255,255,255,0.10) 60deg,
+    rgba(255,255,255,0.03) 120deg,
+    rgba(255,255,255,0.01) 180deg,
+    rgba(255,255,255,0.06) 240deg,
+    rgba(255,255,255,0.01) 300deg,
+    rgba(255,255,255,0.03) 360deg);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: spin 10s linear infinite;
+  pointer-events: none;
+}
+.card:active { transform: scale(0.985); }
+.card.open .card-body { display: block; }
+
+.card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 15px 16px; gap: 12px;
+}
+.card-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.card-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.card-label { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.card-cat { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1px; }
+.card-arrow {
+  font-size: 16px; color: var(--text3); transition: transform 0.22s;
+  flex-shrink: 0; line-height: 1;
+}
+.card.open .card-arrow { transform: rotate(180deg); }
+
+.card-body {
+  display: none;
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--border);
+  margin-top: 0;
+}
+.card-body-inner { padding-top: 14px; }
+
+/* ── CONTENT PIECES ── */
+.def {
+  font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 12px;
+}
+.def strong { color: var(--gold2); font-weight: 500; }
+
+.kv-row {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 8px 10px; background: var(--bg3); border-radius: 8px;
+  margin-bottom: 6px;
+}
+.kv-key {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text3); white-space: nowrap;
+  padding-top: 1px; min-width: 60px; flex-shrink: 0;
+}
+.kv-val { font-size: 13px; color: var(--text); line-height: 1.45; }
+.kv-val em { color: var(--gold); font-style: normal; font-size: 11px; }
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tag {
+  display: inline-block; font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 100px;
+}
+.tag-red { background: rgba(201,66,61,0.1); color: #e07b78; border: 1px solid rgba(201,66,61,0.2); }
+.tag-blue { background: rgba(77,143,204,0.1); color: #6ab0f5; border: 1px solid rgba(77,143,204,0.2); }
+.tag-purple { background: rgba(155,109,214,0.1); color: #b99ae0; border: 1px solid rgba(155,109,214,0.2); }
+.tag-green { background: rgba(77,168,122,0.1); color: #7dd4a8; border: 1px solid rgba(77,168,122,0.2); }
+.tag-gold { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.2); }
+.tag-gray { background: rgba(180,180,180,0.08); color: #999; border: 1px solid rgba(180,180,180,0.15); }
+
+.tip {
+  margin-top: 12px; padding: 10px 12px; border-radius: 8px;
+  background: rgba(201,168,76,0.05); border-left: 2px solid var(--gold);
+  font-size: 12px; color: rgba(232,201,122,0.8); line-height: 1.5;
+}
+
+.ex { margin-top: 10px; font-size: 11px; color: var(--gold); font-style: italic; }
+
+.divl { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+
+/* ── COLORS PER CATEGORY ── */
+.c-narrador { background: rgba(136,136,136,0.15); }
+.c-conflito  { background: rgba(201,66,61,0.15); }
+.c-espaco    { background: rgba(77,168,122,0.15); }
+.c-tempo     { background: rgba(155,109,214,0.15); }
+.c-personagem{ background: rgba(77,143,204,0.15); }
+.c-autor     { background: rgba(201,168,76,0.18); }
+
+.d-narrador  { color: #aaa; }
+.d-conflito  { color: #e07b78; }
+.d-espaco    { color: #7dd4a8; }
+.d-tempo     { color: #b99ae0; }
+.d-personagem{ color: #6ab0f5; }
+.d-autor     { color: var(--gold2); }
+
+/* ── COUNTER ── */
+.counter {
+  position: fixed; bottom: 16px; right: 16px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 100px; padding: 6px 14px;
+  font-size: 12px; color: var(--text2); z-index: 50;
+  backdrop-filter: blur(8px);
+}
+.counter span { color: var(--gold); font-weight: 600; }
+
+/* ── HIDDEN ── */
+.card.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Colinha</div>
+    <div class="topbar-sub">Narrativa Audiovisual · Aula 01</div>
+  </div>
+  <div style="font-size:20px;">🎬</div>
+</div>
+
+<div class="cats" id="cats">
+  <button class="cat-pill active" data-cat="all" onclick="filterCat('all',this)">Todos</button>
+  <button class="cat-pill" data-cat="narrador" onclick="filterCat('narrador',this)">📢 Narrador</button>
+  <button class="cat-pill" data-cat="conflito" onclick="filterCat('conflito',this)">⚡ Conflito</button>
+  <button class="cat-pill" data-cat="espaco" onclick="filterCat('espaco',this)">🗺️ Espaço</button>
+  <button class="cat-pill" data-cat="tempo" onclick="filterCat('tempo',this)">⏱️ Tempo</button>
+  <button class="cat-pill" data-cat="personagem" onclick="filterCat('personagem',this)">🎭 Personagem</button>
+  <button class="cat-pill" data-cat="autor" onclick="filterCat('autor',this)">✍️ Autor</button>
+</div>
+
+<div class="cards-wrap" id="cards">
+
+  <!-- ──────── NARRADOR ──────── -->
+  <div class="card" data-cat="narrador" onclick="toggleCard(this)">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot c-narrador"></div>
+        <div>
+          <div class="card-label">O que é o narrador?</div>
+          <div class="card-cat d-narrador">Narrador</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+      <div class="def"><strong>Intermediário entre autor e espectador.</strong></div>
+      <div class="kv-row"><div class="kv-key">Funções</div><div class="kv-val">Contar o fato · Situar · Descrever circunstâncias · Sequenciar os fatos · Apresentar personagens · Apresentar conflito</div></div>
+      <div class="tip">💡 Outros elementos também podem narrar: música, direção de arte, câmera e espaço off.</div>
+    </div></div>
+  </div>
+
+  <div class="card" data-cat="narrador" onclick="toggleCard(this)">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot c-narrador"></div>
+        <div>
+          <div class="card-label">Narrador em 1ª pessoa</div>
+          <div class="card-cat d-narrador">Narrador</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+      <div class="def">É personagem da história. Conta algo <strong>acontecido com ele</strong>. Narração <strong>subjetiva e parcial</strong> — tem opiniões e julgamentos.</div>
+      <div class="kv-row">
+        <div class="kv-key">A) Protagonista</div>
+        <div class="kv-val">É o personagem principal. Causa suspense: espectador descobre junto. <em>Ex: You (2018)</em></div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-key">B) Testemunha</div>
+        <div class="kv-val">É um dos outros personagens — narra a história do protagonista de fora. <em>Ex: O Grande Gatsby</em></div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="card" data-cat="narrador" onclick="toggleCard(this)">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot c-narrador"></div>
+        <div>
+          <div class="card-label">Narrador em 3ª pessoa</div>
+          <div class="card-cat d-narrador">Narrador</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+      <div class="def"><strong>Não faz parte da história</strong> — ampla liberdade de narrar.</div>
+      <div class="kv-row">
+        <div class="kv-key">A) Observador</div>
+        <div class="kv-val">Testemunha dos fatos, mas não participa das ações. Só tem seu ponto de vista. <em>Ex: documentários</em></div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-key">B) Onisciente</div>
+        <div class="kv-val">Sabe de tudo. Conhece todos os aspectos e personagens. Pode descrever sentimentos e influenciar o espectador. <em>Ex: Jane, a Virgem (2014)</em></div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="card" data-cat="narrador" onclick="toggleCard(this)">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot c-narrador"></div>
+        <div>
+          <div class="card-label">Narradores não-textuais</div>
+          <div class="card-cat d-narrador">Narrador</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+      <div class="def">Outros elementos que conduzem a narrativa <strong>como se fossem narradores</strong>:</div>
+      <div class="kv-row"><div class="kv-key">Direção de arte</div><div class="kv-val">Cores, cenário, luz comunicam sem palavras. <em>Ex: Traffic (2000)</em></div></div>
+      <div class="kv-row"><div class="kv-key">Música</div><div class="kv-val">Guia emoções, reforça sentidos. <em>Ex: Across the Universe (2007)</em></div></div>
+      <div class="kv-row"><div class="kv-key">Câmera</div><div class="kv-val">Ponto de vista — ângulo define o que o espectador sente. <em>Ex: The Affair (2014)</em></div></div>
+      <div class="kv-row"><div class="kv-key">Espaço off</div><div class="kv-val">O que existe fora do quadro mas se percebe.</div></div>
+    </div></div>
+  </div>
+
+  <!-- ──────── CONFLITO ──────── -->
+  <div class="card" data-cat="conflito" onclick="toggleCard(this)">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot c-conflito"></div>
+        <div>
+          <div class="card-label">O que é conflito?</div>
+          <div class="card-cat d-conflito">Conflito</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+      <div class="def"><strong>A história não se move se não existe conflito.</strong> É o gatilho de desafios e transformações. Escolha entre situações incompatíveis.</div>
+      <div class="tag-row">
+        <span class="tag tag-gray">Quem matou?</span>
+        <span class="tag tag-gray">Fico com esse ou aquele?</span>
+        <span class="tag tag-gray">Família ou emprego?</span>
+        <span class="tag tag-gray">País ou namorada?</span>
+      </div>
+      <div class="tip">💡 Quanto mais esferas de conflito, melhor a narrativa. Quanto mais conflito humano, maior a projeção do espectador.</div>
+    </div></div>
+  </div>
+
+  <div class="card" data-cat="conflito" onclick="toggleCard(this)">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot c-conflito"></div>
+        <div>
+          <div class="card-label">As 3 esferas de conflito</div>
+          <div class="card-cat d-conflito">Conflito</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+      <div class="kv-row">
+        <div class="kv-key">🧠 Interno</div>
+        <div class="kv-val">Entre o protagonista e <strong>ele mesmo</strong> — sua consciência. Dilema moral, culpa. <em>Ex: American Sniper (2014)</em></div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-key">👥 Pessoal</div>
+        <div class="kv-val">Entre o protagonista e <strong>personagens secundários</strong> — pai, amigos, parceiro, antagonista. <em>Ex: Lady Bird (2017)</em></div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-key">🌍 Extra­pessoal</div>
+        <div class="kv-val">Entre o protagonista e <strong>algo exterior</strong> — instituição, sistema, força não-humana. <em>Ex: Dark Waters (2019)</em></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ──────── ESPAÇO ──────── -->
+  <div class="card" data-cat="espaco" onclick="toggleCard(this)">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot c-espaco"></div>
+        <div>
+          <div class="card-label">Espaço In vs. Off</div>
+          <div class="card-cat d-espaco">Espaço</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+      <div class="def">É <strong>"onde"</strong> se situam os personagens e se processa a sequência dos fatos.</div>
+      <div class="kv-row">
+        <div class="kv-key">✅ IN</div>
+        <div class="kv-val">O lugar que <strong>vemos</strong> os personagens atuando — dentro do quadro da câmera.</div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-key">🔇 OFF</div>
+        <div class="kv-val">Lugar <strong>fora da cena</strong> — não visualizamos, mas <em>"ouvimos"</em> ou percebemos pelas reações. <em>Ex: mãe do Howard — Big Bang Theory · Fargo (2014)</em></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ──────── TEMPO ──────── -->
+  <div class="card" data-cat="tempo" onclick="toggleCard(this)">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot c-tempo"></div>
+        <div>
+          <div class="card-label">Tempo — visão geral</div>
+          <div class="card-cat d-tempo">Tempo</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+      <div class="def">Toda história se passa em algum momento. Um fato pode ser <strong>alongado, diminuído, interrompido ou invertido.</strong></div>
+      <div class="def">Passado e futuro, imaginário e real <strong>sobrepõem-se e confundem-se.</strong></div>
+      <div class="tag-row">
+        <span class="tag tag-gold">Cronológico</span>
+        <span class="tag tag-purple">Psicológico</span>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="card" data-cat="tempo" onclick="toggleCard(this)">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot c-tempo"></div>
+        <div>
+          <div class="card-label">Tempo cronológico vs. psicológico</div>
+          <div class="card-cat d-tempo">Tempo</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+      <div class="kv-row">
+        <div class="kv-key">📅 Crono­lógico</div>
+        <div class="kv-val">Registrado por indicações de <strong>calendário</strong> — anos, meses, dias, horas. Mesmo em flashbacks há lógica sequencial. <em>Ex: Quem quer ser um milionário? (2009)</em></div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-key">🧠 Psico­lógico</div>
+        <div class="kv-val">Narrado a partir da <strong>imaginação</strong> dos personagens. <strong>Sem conexão com o real</strong> — 1 segundo pode durar 1 hora na tela. <em>Ex: Super Bad — cena do supermercado</em></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ──────── PERSONAGEM ──────── -->
+  <div class="card" data-cat="personagem" onclick="toggleCard(this)">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot c-personagem"></div>
+        <div>
+          <div class="card-label">O personagem</div>
+          <div class="card-cat d-personagem">Personagem</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+      <div class="def"><strong>Ação é personagem — ele é o coração da história.</strong> Espectadores experimentam sensações através dele.</div>
+      <div class="kv-row"><div class="kv-key">Para empatia</div><div class="kv-val">Personalidade + história pregressa + conflitos</div></div>
+      <div class="kv-row"><div class="kv-key">No roteiro</div><div class="kv-val">Descrito <strong>física e psicologicamente</strong></div></div>
+    </div></div>
+  </div>
+
+  <div class="card" data-cat="personagem" onclick="toggleCard(this)">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot c-personagem"></div>
+        <div>
+          <div class="card-label">Tipos de personagem</div>
+          <div class="card-cat d-personagem">Personagem</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+      <div class="kv-row">
+        <div class="kv-key">⭐ Protagonista</div>
+        <div class="kv-val">Personagem <strong>principal</strong> — um ou mais. A história gira em torno dele.</div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-key">👤 Secundário</div>
+        <div class="kv-val">Relevante em relação ao protagonista. <strong>Aliado ou opositor</strong> — cria obstáculos ou apoia a trajetória.</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ──────── AUTOR ──────── -->
+  <div class="card" data-cat="autor" onclick="toggleCard(this)">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot c-autor"></div>
+        <div>
+          <div class="card-label">O autor</div>
+          <div class="card-cat d-autor">Autor</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+      <div class="def">Cria o texto, deixando pistas sobre:</div>
+      <div class="tag-row" style="margin-bottom:10px;">
+        <span class="tag tag-gold">Contexto histórico</span>
+        <span class="tag tag-gold">Repertório cultural</span>
+        <span class="tag tag-gold">Estilo narrativo</span>
+      </div>
+      <div class="tip">💡 O autor existe <strong>fora da obra</strong> — é diferente do narrador, que existe dentro dela.</div>
+    </div></div>
+  </div>
+
+  <!-- ──────── MEGA CARD: RESUMÃO ──────── -->
+  <div class="card" data-cat="all-only" onclick="toggleCard(this)" style="border: 1px solid rgba(201,168,76,0.2);">
+    <div class="card-head">
+      <div class="card-left">
+        <div class="card-dot" style="background:var(--gold);"></div>
+        <div>
+          <div class="card-label">🔑 Resumão — tudo em 1 card</div>
+          <div class="card-cat" style="color:var(--gold);">Revisão geral</div>
+        </div>
+      </div>
+      <div class="card-arrow">⌄</div>
+    </div>
+    <div class="card-body"><div class="card-body-inner">
+
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;">6 Elementos</div>
+      <div class="kv-row"><div class="kv-key">Autor</div><div class="kv-val">Cria o texto, existe fora da obra</div></div>
+      <div class="kv-row"><div class="kv-key">Narrador</div><div class="kv-val">Intermediário autor ↔ espectador</div></div>
+      <div class="kv-row"><div class="kv-key">Personagem</div><div class="kv-val">Coração da história (ação é personagem)</div></div>
+      <div class="kv-row"><div class="kv-key">Conflito</div><div class="kv-val">Motor da história — sem ele nada se move</div></div>
+      <div class="kv-row"><div class="kv-key">Espaço</div><div class="kv-val">In (vemos) / Off (ouvimos sem ver)</div></div>
+      <div class="kv-row"><div class="kv-key">Tempo</div><div class="kv-val">Cronológico (calendário) / Psicológico (imaginação)</div></div>
+
+      <hr class="divl">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;">Tipos de Narrador</div>
+      <div class="kv-row"><div class="kv-key">1ª A</div><div class="kv-val"><strong>Protagonista</strong> — conta o que viveu, subjetivo, cria suspense</div></div>
+      <div class="kv-row"><div class="kv-key">1ª B</div><div class="kv-val"><strong>Testemunha</strong> — personagem secundário que narra o protagonista</div></div>
+      <div class="kv-row"><div class="kv-key">3ª A</div><div class="kv-val"><strong>Observador</strong> — fora da história, só seu ponto de vista</div></div>
+      <div class="kv-row"><div class="kv-key">3ª B</div><div class="kv-val"><strong>Onisciente</strong> — sabe tudo, descreve sentimentos, influencia</div></div>
+
+      <hr class="divl">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;">3 Esferas de Conflito</div>
+      <div class="kv-row"><div class="kv-key">🧠 Interno</div><div class="kv-val">Protagonista vs. ele mesmo / consciência</div></div>
+      <div class="kv-row"><div class="kv-key">👥 Pessoal</div><div class="kv-val">Protagonista vs. personagens secundários</div></div>
+      <div class="kv-row"><div class="kv-key">🌍 Extra</div><div class="kv-val">Protagonista vs. instituição / força externa</div></div>
+
+      <hr class="divl">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;">Exemplos de Filmes / Séries</div>
+      <div class="kv-row"><div class="kv-key">You (2018)</div><div class="kv-val">Narrador protagonista em 1ª pessoa</div></div>
+      <div class="kv-row"><div class="kv-key">Jane, a Virgem</div><div class="kv-val">Narrador onisciente em voz over</div></div>
+      <div class="kv-row"><div class="kv-key">Big Bang Theory</div><div class="kv-val">Espaço off (mãe do Howard)</div></div>
+      <div class="kv-row"><div class="kv-key">Dark Waters</div><div class="kv-val">Conflito extrapessoal</div></div>
+      <div class="kv-row"><div class="kv-key">American Sniper</div><div class="kv-val">Conflito interno</div></div>
+      <div class="kv-row"><div class="kv-key">Lady Bird</div><div class="kv-val">Conflito pessoal + interno sobrepostos</div></div>
+      <div class="kv-row"><div class="kv-key">Super Bad</div><div class="kv-val">Tempo psicológico</div></div>
+      <div class="kv-row"><div class="kv-key">Traffic (2000)</div><div class="kv-val">Direção de arte como narrador</div></div>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="counter">Mostrando <span id="cnt-visible">11</span> de <span id="cnt-total">11</span></div>
+
+<script>
+function toggleCard(card) {
+  card.classList.toggle('open');
+}
+
+function filterCat(cat, pill) {
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+  pill.classList.add('active');
+
+  const cards = document.querySelectorAll('.card');
+  let visible = 0;
+  cards.forEach(card => {
+    const cardCat = card.getAttribute('data-cat');
+    if (cat === 'all') {
+      card.classList.remove('hidden');
+      visible++;
+    } else if (cardCat === 'all-only') {
+      card.classList.add('hidden');
+    } else if (cardCat === cat) {
+      card.classList.remove('hidden');
+      visible++;
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+  document.getElementById('cnt-visible').textContent = visible;
+}
+
+const total = document.querySelectorAll('.card').length;
+document.getElementById('cnt-total').textContent = total;
+document.getElementById('cnt-visible').textContent = total;
+</script>
+</body>
+</html>
